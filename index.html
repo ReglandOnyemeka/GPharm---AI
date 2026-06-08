@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en-NG">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPharm AI — Lagos Premier Pharmacy</title>
+    
+    <!-- Premium Clinical Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Core Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --green-deep: #0a4a3a;
+            --green-mid: #166b54;
+            --green-bright: #1e9070;
+            --green-pale: #f0f7f4;
+            --gold: #c8963c;
+            --white: #ffffff;
+            --ink: #1a1c1a;
+            --ink-muted: #5c625c;
+            --border: #e0e6e2;
+            --radius-md: 16px;
+            --shadow: 0 10px 30px rgba(10, 74, 58, 0.08);
+            --ai-purple: #8b5cf6;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'DM Sans', sans-serif; 
+            background-color: #fafaf9; 
+            color: var(--ink);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* NAVIGATION */
+        nav {
+            background: var(--white);
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .logo-group { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .logo-box { background: var(--green-deep); color: white; padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 1.2rem; }
+        .logo-text { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 800; color: var(--green-deep); }
+        
+        .nav-links button {
+            background: none; border: none; font-weight: 600; cursor: pointer; color: var(--ink-muted); padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.9rem;
+        }
+        .nav-links button.active { color: var(--green-deep); background: var(--green-pale); }
+        .pharm-login-btn { border: 1.5px solid var(--green-deep) !important; color: var(--green-deep) !important; border-radius: 30px !important; margin-left: 10px; }
+
+        /* HERO & UI CONTAINERS */
+        .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+        .view { display: none; }
+        .view.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .hero { 
+            background: var(--green-deep); 
+            color: white; 
+            padding: 3.5rem 1.5rem; 
+            border-radius: var(--radius-md); 
+            text-align: center; 
+            margin-bottom: 2rem;
+        }
+        .hero h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; margin-bottom: 0.5rem; }
+        .hero p { opacity: 0.85; font-weight: 300; }
+
+        /* SEARCH BAR */
+        .search-container { position: relative; margin-bottom: 2rem; }
+        #input-search-public { 
+            width: 100%; padding: 1.2rem 1.5rem; border-radius: 50px; 
+            border: 1px solid var(--border); font-size: 1rem; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); outline: none; 
+        }
+
+        /* GRID & CARDS */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .card { 
+            background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md); 
+            padding: 1.5rem; display: flex; flex-direction: column; transition: 0.2s; box-shadow: var(--shadow);
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--green-mid); }
+        .card .badge { display: inline-block; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; background: var(--green-pale); color: var(--green-mid); margin-bottom: 10px; text-transform: uppercase; }
+        .card h3 { font-size: 1.2rem; color: var(--green-deep); margin-bottom: 5px; }
+        .card .api-text { font-size: 0.75rem; color: var(--ink-muted); margin-bottom: 15px; }
+        .card .price { font-size: 1.4rem; font-weight: 700; color: var(--gold); margin-top: auto; }
+
+        /* BUTTONS */
+        .btn-primary { background: var(--green-deep); color: white; border: none; padding: 1rem; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; transition: 0.2s; }
+        .btn-ai { background: var(--ai-purple); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; margin-bottom: 10px; width: 100%; }
+        .btn-outline { background: white; border: 1.5px solid var(--border); color: var(--green-deep); padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; }
+
+        /* AI BANNER */
+        .ai-banner { background: #f5f3ff; border: 1.5px solid var(--ai-purple); padding: 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; display: none; }
+        .ai-disclaimer { font-size: 0.7rem; font-style: italic; color: #6b7280; border-top: 1px solid #ddd; padding-top: 8px; margin-top: 10px; }
+
+        /* ADMIN KPIs */
+        #insights-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card { background: var(--white); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border); }
+        .stat-card label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--ink-muted); display: block; margin-bottom: 5px; }
+        .stat-card .value { font-size: 1.6rem; font-weight: 700; color: var(--green-deep); }
+
+        /* FLOATING CART BAR */
+        #public-cart-bar {
+            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+            background: var(--green-deep); color: white; width: 90%; max-width: 450px;
+            padding: 1.2rem 2rem; border-radius: 50px; cursor: pointer; display: none;
+            justify-content: space-between; align-items: center; box-shadow: 0 15px 40px rgba(0,0,0,0.3); z-index: 1001;
+        }
+
+        /* MODALS */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 2000; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-content { background: white; padding: 2rem; border-radius: 24px 24px 0 0; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { font-size: 0.8rem; font-weight: 700; color: var(--green-deep); display: block; margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 1rem; outline: none; }
+
+        footer { text-align: center; padding: 3rem 1.5rem; border-top: 1px solid var(--border); margin-top: 3rem; color: var(--ink-muted); font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo-group" onclick="window.location.reload()">
+        <div class="logo-box">G</div>
+        <span class="logo-text">GPharm</span>
+    </div>
+    <div class="nav-links">
+        <button onclick="window.showView('home')" id="nav-btn-home" class="active">Storefront</button>
+        <button onclick="window.handleLogin()" id="nav-btn-admin" class="pharm-login-btn">Pharmacy Login</button>
+    </div>
+</nav>
+
+<!-- STOREFRONT VIEW -->
+<div id="view-home" class="view active">
+    <div class="container">
+        <div class="hero">
+            <h1>Healthcare You Can Trust</h1>
+            <p>Licensed Pharmacy • Fast Delivery • Genuine Medicine in Lagos</p>
+        </div>
+
+        <div id="ai-banner-public" class="ai-banner">
+            <div id="ai-content-public"></div>
+            <div class="ai-disclaimer">⚠️ <strong>Clinical Note:</strong> AI advice is for guidance only. Please verify with our pharmacist.</div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="input-search-public" placeholder="Search by medication name, symptom, or molecule...">
+        </div>
+
+        <div id="public-grid" class="grid">
+            <div style="text-align: center; padding: 3rem; grid-column: 1/-1; opacity: 0.5;">
+                Syncing with Lagos clinical database...
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px; padding-bottom: 40px;">
+            <a href="#" id="apk-link" style="text-decoration:none; color:#1a1c1a; font-weight:700; font-size:0.8rem; background:#eee; padding:12px 24px; border-radius:30px; border: 1px solid #ddd; display: inline-block;">📥 Download GPharm Lagos APK</a>
+        </div>
+    </div>
+</div>
+
+<!-- ADMIN / PHARVENTORY VIEW -->
+<div id="view-admin" class="view">
+    <div class="container">
+        <div id="insights-panel">
+            <div class="stat-card"><label>Inventory Value</label><div class="value" id="stat-total">₦0</div></div>
+            <div class="stat-card"><label>Low Stock</label><div class="value" id="stat-low">0</div></div>
+            <div class="stat-card"><label>Batch Count</label><div class="value" id="stat-count">0</div></div>
+        </div>
+
+        <div id="ai-banner-admin" class="ai-banner">
+            <div id="ai-content-admin"></div>
+            <div class="ai-disclaimer">⚠️ <strong>Decision Support:</strong> Verify clinical compatibility before suggesting alternatives.</div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
+            <h2 style="font-family:'Playfair Display'; color:var(--green-deep);">Cloud Inventory</h2>
+            <div style="display:flex; gap:10px;">
+                <input type="file" id="excel-file" style="display:none;" onchange="window.handleExcelUpload(this)">
+                <button class="btn-outline" onclick="document.getElementById('excel-file').click()">Import Excel</button>
+                <button class="btn-primary" style="padding: 0.8rem 1.5rem; width: auto;" onclick="window.openAddModal()">+ Add Item</button>
+            </div>
+        </div>
+
+        <div id="admin-grid" class="grid"></div>
+    </div>
+</div>
+
+<!-- FLOATING CART BAR -->
+<div id="public-cart-bar" onclick="window.openPublicCart()">
+    <span style="font-weight: 700;">🛒 View Cart (<span id="cart-count">0</span>)</span>
+    <span id="cart-sum" style="font-weight: 700;">₦0</span>
+</div>
+
+<!-- MODAL: CHECKOUT -->
+<div class="modal" id="modal-checkout">
+    <div class="modal-content">
+        <h2 style="font-family:'Playfair Display'; margin-bottom: 1.5rem; color: var(--green-deep);">Secure Checkout</h2>
+        <div id="modal-cart-items" style="margin-bottom: 1.5rem; border-bottom: 1px solid #eee;"></div>
+        
+        <div class="form-group"><label>Receiver Full Name</label><input type="text" id="order-name"></div>
+        <div class="form-group"><label>Lagos Phone (11-Digits)</label><input type="tel" id="order-phone" maxlength="11"></div>
+        <div class="form-group"><label>Delivery Address</label><input type="text" id="order-address"></div>
+        
+        <button class="btn-primary" onclick="window.checkoutPublic()">Confirm Order via WhatsApp</button>
+        <button onclick="window.closeModal('modal-checkout')" style="width:100%; margin-top:10px; background:none; border:none; cursor:pointer; color:var(--ink-muted);">Cancel</button>
+    </div>
+</div>
+
+<!-- MODAL: ADD PRODUCT -->
+<div class="modal" id="modal-add" style="align-items: center;">
+    <div class="modal-content" style="border-radius: 20px; position:relative; bottom:auto; width: 90%; max-width: 500px;">
+        <h2 style="font-family:'Playfair Display'; margin-bottom: 1rem; color: var(--green-deep);">New Batch Entry</h2>
+        <div class="form-group"><label>Brand Name</label><input type="text" id="m-name"></div>
+        <div class="form-group"><label>API (Active Ingredient)</label><input type="text" id="m-api"></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div class="form-group"><label>Price (₦)</label><input type="number" id="m-price"></div>
+            <div class="form-group"><label>Quantity</label><input type="number" id="m-stock"></div>
+        </div>
+        <div class="form-group">
+            <label>Category</label>
+            <select id="m-cat">
+                <option value="Analgesics">Analgesics</option>
+                <option value="Antibiotics">Antibiotics</option>
+                <option value="Antimalarials">Antimalarials</option>
+                <option value="Supplements">Supplements</option>
+                <option value="Cough & Cold">Cough & Cold</option>
+                <option value="Hygiene">Hygiene</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label style="cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" id="m-pom" style="width:auto;"> Prescription Required (POM)</label>
+        </div>
+        <button class="btn-primary" onclick="window.saveManualProduct()">Save to Cloud Database</button>
+        <button onclick="window.closeModal('modal-add')" style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer; color:#888;">Cancel</button>
+    </div>
+</div>
+
+<footer>
+    <p>&copy; <span id="footer-year"></span> GPharm Lagos. Verified Pharmaceutical Service.</p>
+    <p style="font-size: 0.7rem; margin-top: 5px; opacity: 0.6;">Cloud Sync Active • Gemini AI Decision Support</p>
+</footer>
+
+<!-- External Logic Link -->
+<script src="app.js"></script>
+
+</body>
+</html>
