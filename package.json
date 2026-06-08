@@ -1,0 +1,13 @@
+{
+  "name": "gpharm-ai-lagos",
+  "version": "1.0.0",
+  "description": "Smart Pharmacy System for Lagos",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "npm install"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
