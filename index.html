@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GSmart Pharmacy</title>
+    <title>Pocket Pharmacy</title>
+    
+    <!-- Premium Clinical Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     
     <!-- Core Libraries -->
@@ -35,7 +38,7 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* NAVIGATION - Fixed Logout Visibility */
+        /* NAVIGATION - Fixed Contrast Visibility */
         nav {
             background: var(--white);
             padding: 0.8rem 1.5rem;
@@ -47,28 +50,32 @@
             top: 0;
             z-index: 1000;
         }
-        .logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 800; color: var(--green-deep); cursor: pointer; }
+        .logo-group { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .logo-box { background: var(--green-deep); color: white; padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 1.2rem; }
+        .logo-text { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 800; color: var(--green-deep); }
         
         .nav-btn { 
             background: none; 
             border: 1px solid var(--border); 
-            padding: 8px 20px; 
+            padding: 8px 18px; 
             border-radius: 20px; 
             cursor: pointer; 
             font-weight: 600; 
             font-size: 0.9rem;
-            color: var(--ink-muted);
+            color: var(--green-deep); /* Default to green text */
             transition: all 0.2s ease;
         }
-        .nav-btn.active { 
-            background: var(--green-deep) !important; 
-            color: #ffffff !important; 
-            border-color: var(--green-deep) !important;
-            box-shadow: 0 4px 10px rgba(10,74,58,0.2);
-        }
-        #nav-btn-admin { border-color: var(--green-deep); color: var(--green-deep); }
+        #nav-btn-admin { border-color: var(--green-deep); }
 
-        /* LAYOUT */
+        /* ACTIVE State (Forces White Text) */
+        .nav-btn.active, #nav-btn-admin.active { 
+            background: var(--green-deep) !important; 
+            color: #ffffff !important; /* Force Pure White Text */
+            border-color: var(--green-deep) !important;
+            box-shadow: 0 4px 12px rgba(10, 74, 58, 0.15);
+        }
+
+        /* LAYOUT & CONTAINERS */
         .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
         .view { display: none; }
         .view.active { display: block; animation: fadeIn 0.4s ease-out; }
@@ -77,13 +84,23 @@
         .hero { 
             background: var(--green-deep); 
             color: white; 
-            padding: 3rem 1.5rem; 
+            padding: 3.5rem 1.5rem; 
             border-radius: var(--radius-md); 
             text-align: center; 
             margin-bottom: 2rem;
         }
+        .hero h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; margin-bottom: 0.5rem; }
+        .hero p { opacity: 0.85; font-weight: 300; }
 
-        /* ADMIN SUB-NAV */
+        /* SEARCH BAR */
+        .search-container { position: relative; margin-bottom: 2rem; }
+        #input-search-public { 
+            width: 100%; padding: 1.2rem 1.5rem; border-radius: 50px; 
+            border: 1px solid var(--border); font-size: 1rem; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); outline: none; 
+        }
+
+        /* ADMIN TABS */
         .segmented-control {
             display: flex;
             gap: 8px;
@@ -111,65 +128,111 @@
             padding: 1.5rem; display: flex; flex-direction: column; transition: 0.2s; box-shadow: var(--shadow);
         }
         .card:hover { transform: translateY(-5px); border-color: var(--green-mid); }
-        .price { font-size: 1.4rem; font-weight: 700; color: var(--gold); margin-top: auto; }
+        .card .badge { display: inline-block; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; background: var(--green-pale); color: var(--green-mid); margin-bottom: 10px; text-transform: uppercase; }
+        .card h3 { font-size: 1.2rem; color: var(--green-deep); margin-bottom: 5px; }
+        .card .api-text { font-size: 0.75rem; color: var(--ink-muted); margin-bottom: 15px; }
+        .card .price { font-size: 1.4rem; font-weight: 700; color: var(--gold); margin-top: auto; }
 
-        /* POS ELEMENTS */
+        /* STAFF ONLY ELEMENTS */
         .pos-layout { display: grid; grid-template-columns: 1fr 400px; gap: 2rem; }
         @media (max-width: 900px) { .pos-layout { grid-template-columns: 1fr; } }
         .billing-card { background: white; padding: 2rem; border-radius: 16px; border: 2px solid var(--green-deep); position: sticky; top: 100px; }
+        .payment-box { background: #f8fbf9; padding: 15px; border-radius: 12px; margin-top: 1rem; }
+        .pay-input { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .pay-input input { width: 100px; padding: 5px; text-align: right; border-radius: 5px; border: 1px solid #ccc; }
 
         /* AI BANNER */
-        .ai-banner { background: #f5f3ff; border: 1.5px solid var(--ai-purple); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; display: none; }
-        .ai-disclaimer { font-size: 0.7rem; font-style: italic; color: #6b7280; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 12px; }
+        .ai-banner { background: #f5f3ff; border: 1.5px solid var(--ai-purple); padding: 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; display: none; }
+        .ai-disclaimer { font-size: 0.7rem; font-style: italic; color: #6b7280; border-top: 1px solid #ddd; padding-top: 8px; margin-top: 10px; }
+        .ai-banner strong { color: var(--green-deep); background: #e9dffc; padding: 2px 4px; border-radius: 4px; }
 
         /* BUTTONS */
-        .btn-primary { background: var(--green-deep); color: white; border: none; padding: 1rem; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; }
-        .btn-ai { background: var(--ai-purple); color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 700; width: 100%; margin: 10px 0; }
-        .btn-outline { background: white; border: 1.5px solid var(--border); color: var(--green-deep); padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .btn-primary { background: var(--green-deep); color: white; border: none; padding: 1rem; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; transition: 0.2s; }
+        .btn-ai { background: var(--ai-purple); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; margin-bottom: 10px; width: 100%; }
+        .btn-outline { background: white; border: 1px solid var(--border); color: var(--green-deep); padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; }
+
+        /* ADMIN KPIs */
+        #insights-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card { background: var(--white); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border); }
+        .stat-card label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--ink-muted); display: block; margin-bottom: 5px; }
+        .stat-card .value { font-size: 1.6rem; font-weight: 700; color: var(--green-deep); }
+
+        /* FLOATING CART BAR */
+        #public-cart-bar {
+            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+            background: var(--green-deep); color: white; width: 90%; max-width: 450px;
+            padding: 1.2rem 2rem; border-radius: 50px; cursor: pointer; display: none;
+            justify-content: space-between; align-items: center; box-shadow: 0 15px 40px rgba(0,0,0,0.3); z-index: 1001;
+        }
 
         /* MODALS */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 2000; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
-        .modal-content { background: white; padding: 2.5rem; border-radius: 24px 24px 0 0; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
-        
+        .modal-content { background: white; padding: 2rem; border-radius: 24px 24px 0 0; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { font-size: 0.8rem; font-weight: 700; color: var(--green-deep); display: block; margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 1rem; outline: none; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; border-radius: 12px; overflow: hidden; }
         th { text-align: left; padding: 12px; background: var(--green-pale); color: var(--green-deep); font-size: 0.75rem; text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
 
-        #public-cart-bar { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); background: var(--green-deep); color: white; width: 90%; max-width: 450px; padding: 1.2rem 2rem; border-radius: 50px; cursor: pointer; display: none; justify-content: space-between; align-items: center; z-index: 1001; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        footer { text-align: center; padding: 3rem 1.5rem; border-top: 1px solid var(--border); margin-top: 3rem; color: var(--ink-muted); font-size: 0.85rem; }
     </style>
 </head>
 <body>
 
 <nav>
-    <div class="logo" onclick="window.location.reload()">GPharm <small style="color:var(--green-bright); font-size: 0.6rem;">LAGOS</small></div>
-    <div>
+    <div class="logo-group" onclick="window.location.reload()">
+        <div class="logo-box">G</div>
+        <span class="logo-text">GPharm</span>
+    </div>
+    <div class="nav-links">
         <button onclick="window.showView('home')" id="nav-btn-home" class="nav-btn active">MyPharmacy</button>
         <button onclick="window.handleLogin()" id="nav-btn-admin" class="nav-btn">Pharmacy Login</button>
     </div>
 </nav>
 
-<!-- PATIENT STOREFRONT -->
+<!-- STOREFRONT VIEW -->
 <div id="view-home" class="view active">
     <div class="container">
         <div class="hero">
             <h1>Lagos Healthcare You Can Trust</h1>
             <p>Licensed Pharmacy &bull; Doorstep Delivery &bull; PCN Verified</p>
         </div>
-        <input type="text" id="input-search-public" placeholder="Search brands, ingredients, or symptoms..." style="width:100%; padding:1.2rem; border-radius:50px; border:1px solid var(--border); outline:none; box-shadow: var(--shadow); margin-bottom: 2rem;">
-        <div id="public-grid" class="grid"></div>
+
+        <div class="search-container">
+            <input type="text" id="input-search-public" placeholder="Search by medication name, symptom, or molecule...">
+        </div>
+
+        <div id="public-grid" class="grid">
+            <div style="text-align: center; padding: 3rem; grid-column: 1/-1; opacity: 0.5;">
+                Syncing with Lagos clinical database...
+            </div>
+        </div>
         
-        <div style="text-align: center; margin-top: 4rem; padding-bottom: 4rem;">
-            <a href="https://github.com/ReglandOnyemeka/GPharm---AI/releases/download/v1.0.0/GPharm.1.0.zip" style="text-decoration:none; color:var(--ink); font-weight:700; font-size:0.8rem; background:#eee; padding:12px 24px; border-radius:30px; display: inline-block;">📥 Download GPharm Lagos APK (.zip)</a>
+        <div style="text-align: center; margin-top: 40px; padding-bottom: 40px;">
+            <a href="https://github.com/ReglandOnyemeka/GPharm---AI/releases/download/v1.0.0/GPharm.1.0.zip" id="apk-link" style="text-decoration:none; color:var(--ink); font-weight:700; font-size:0.8rem; background:#eee; padding:12px 24px; border-radius:30px; border: 1px solid #ddd; display: inline-block;">📥 Download GPharm Lagos App (.zip)</a>
         </div>
     </div>
 </div>
 
-<!-- STAFF PHARVENTORY -->
+<!-- STAFF PHARVENTORY VIEW -->
 <div id="view-admin" class="view">
     <div class="container">
+        <div id="insights-panel">
+            <div class="stat-card"><label>Inventory Value</label><div class="value" id="stat-total">₦0</div></div>
+            <div class="stat-card"><label>Low Stock</label><div class="value" id="stat-low">0</div></div>
+            <div class="stat-card"><label>Batch Count</label><div class="value" id="stat-count">0</div></div>
+        </div>
+
         <div id="ai-banner-admin" class="ai-banner">
             <div id="ai-content-admin"></div>
-            <div class="ai-disclaimer">⚠️ <strong>Staff Terminal:</strong> Pricing data based on Lagos market benchmarks. Verify molecule compatibility before suggesting generic alternatives.</div>
+            <div class="ai-disclaimer">⚠️ <strong>Decision Support:</strong> Pricing data based on Lagos market benchmarks. Verify molecule compatibility before confirming substitution.</div>
         </div>
 
         <div class="segmented-control">
@@ -191,12 +254,12 @@
                         <div style="display:flex; justify-content:space-between; font-size:1.75rem; font-weight:800; color: var(--green-deep);">
                             <span>Total</span><span id="pos-total">₦0</span>
                         </div>
-                        <div style="background: #f8fbf9; padding: 15px; border-radius: 12px; margin-top: 1rem;">
-                            <div style="display:flex; justify-content:space-between; margin-bottom: 8px;"><span>Cash (₦)</span><input type="number" id="pay-cash" value="0" oninput="window.validatePOS()" style="width:100px; text-align:right;"></div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom: 8px;"><span>Transfer (₦)</span><input type="number" id="pay-transfer" value="0" oninput="window.validatePOS()" style="width:100px; text-align:right;"></div>
-                            <div style="display:flex; justify-content:space-between;"><span>POS/Card (₦)</span><input type="number" id="pay-card" value="0" oninput="window.validatePOS()" style="width:100px; text-align:right;"></div>
+                        <div class="payment-box">
+                            <div class="pay-input"><span>Cash (₦)</span><input type="number" id="pay-cash" value="0" oninput="window.validatePOS()" style="width:100px; text-align:right;"></div>
+                            <div class="pay-input"><span>Transfer (₦)</span><input type="number" id="pay-transfer" value="0" oninput="window.validatePOS()" style="width:100px; text-align:right;"></div>
+                            <div class="pay-input"><span>POS/Card (₦)</span><input type="number" id="pay-card" value="0" oninput="window.validatePOS()" style="width:100px; text-align:right;"></div>
                         </div>
-                        <button class="btn-primary" id="btn-checkout-pos" onclick="window.checkoutPOS()" disabled style="opacity:0.5; margin-top: 1.5rem;">Complete Sale</button>
+                        <button class="btn-primary" id="btn-checkout-pos" onclick="window.checkoutPOS()" disabled style="opacity:0.5; margin-top: 1.5rem;">Complete Sale & SMS Receipt</button>
                     </div>
                 </div>
             </div>
@@ -208,8 +271,8 @@
                 <h2>Stock Management</h2>
                 <div style="display:flex; gap:12px;">
                     <input type="file" id="excel-file" style="display:none;" onchange="window.handleExcelUpload(this)">
-                    <button class="nav-btn" onclick="document.getElementById('excel-file').click()">Import Excel</button>
-                    <button class="nav-btn" style="background:var(--gold); color:white; border:none;" onclick="window.openAddModal()">+ Add New Drug</button>
+                    <button class="btn-outline" onclick="document.getElementById('excel-file').click()">Import Excel</button>
+                    <button class="btn-primary" style="padding: 0.8rem 1.5rem; width: auto;" onclick="window.openAddModal()">+ Add New Drug</button>
                 </div>
             </div>
             <table>
@@ -220,6 +283,7 @@
     </div>
 </div>
 
+<!-- FLOATING CART -->
 <div id="public-cart-bar" onclick="window.openPublicCart()">
     <span style="font-weight: 700;">🛒 View Cart (<span id="cart-count">0</span>)</span>
     <span id="cart-sum" style="font-weight: 700;">₦0</span>
@@ -229,29 +293,44 @@
 <div class="modal" id="modal-checkout">
     <div class="modal-content">
         <h2 style="font-family:'Playfair Display'; margin-bottom: 1.5rem; color: var(--green-deep);">Confirm Your Order</h2>
-        <div id="modal-cart-list" style="margin-bottom: 1.5rem;"></div>
-        <input type="text" id="order-name" placeholder="Receiver Full Name" style="width:100%; padding:12px; border-radius:10px; border:1px solid #ccc; margin-bottom:12px;">
-        <input type="tel" id="order-phone" maxlength="11" placeholder="Phone Number (080...)" style="width:100%; padding:12px; border-radius:10px; border:1px solid #ccc; margin-bottom:12px;">
-        <input type="text" id="order-address" placeholder="Lagos Delivery Address" style="width:100%; padding:12px; border-radius:10px; border:1px solid #ccc; margin-bottom:1.5rem;">
-        <button class="btn-primary" onclick="window.checkoutPublic()">Place Order via WhatsApp</button>
-        <button onclick="window.closeModal('modal-checkout')" style="width:100%; margin-top:1rem; border:none; background:none; cursor:pointer; color:#888;">Cancel</button>
+        <div id="modal-cart-list" style="margin-bottom: 1.5rem; border-bottom: 1px solid #eee;"></div>
+        <div class="form-group"><label>Receiver Full Name</label><input type="text" id="order-name"></div>
+        <div class="form-group"><label>Lagos Phone (11-Digits)</label><input type="tel" id="order-phone" maxlength="11"></div>
+        <div class="form-group"><label>Delivery Address</label><input type="text" id="order-address"></div>
+        
+        <button class="btn-primary" onclick="window.checkoutPublic()">Confirm Order via WhatsApp</button>
+        <button onclick="window.closeModal('modal-checkout')" style="width:100%; margin-top:10px; background:none; border:none; cursor:pointer; color:var(--ink-muted);">Cancel</button>
     </div>
 </div>
 
 <div class="modal" id="modal-add">
     <div class="modal-content" style="border-radius: 20px; align-self: center; margin-bottom: 50vh; transform: translateY(25vh);">
-        <h2 style="margin-bottom: 1.5rem;">Log New Stock</h2>
-        <input type="text" id="m-name" placeholder="Brand Name" style="width:100%; padding:12px; margin-bottom:10px;">
-        <input type="text" id="m-api" placeholder="Active Ingredient (API)" style="width:100%; padding:12px; margin-bottom:10px;">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <input type="number" id="m-price" placeholder="Retail Price (₦)">
-            <input type="number" id="m-stock" placeholder="Initial Qty">
-        </div><br>
-        <label><input type="checkbox" id="m-pom"> Prescription Required (POM)</label><br><br>
-        <button class="btn-primary" onclick="window.saveManualProduct()">Add to Cloud Database</button>
-        <button onclick="window.closeModal('modal-add')" style="width:100%; margin-top:1rem; border:none; background:none; cursor:pointer;">Cancel</button>
+        <h2 style="font-family:'Playfair Display'; margin-bottom: 1rem; color: var(--green-deep);">New Product Batch</h2>
+        <div class="form-group"><label>Product Name</label><input type="text" id="m-name"></div>
+        <div class="form-group"><label>Active Ingredient (API)</label><input type="text" id="m-api"></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div class="form-group">
+                <label>Category</label>
+                <select id="m-cat">
+                    <option>Analgesics</option><option>Antibiotics</option><option>Antimalarials</option><option>Supplements</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Price (₦)</label>
+                <input type="number" id="m-price">
+            </div>
+        </div>
+        <div class="form-group"><label>Stock Quantity</label><input type="number" id="m-stock"></div>
+        <div class="form-group"><label style="cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" id="m-pom" style="width:auto;"> Prescription Required (POM)</label></div>
+        <button class="btn-primary" onclick="window.saveManualProduct()">Save to Cloud</button>
+        <button onclick="window.closeModal('modal-add')" style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer;">Cancel</button>
     </div>
 </div>
+
+<footer>
+    <p>&copy; <span id="footer-year"></span> GPharm Lagos. Verified Pharmaceutical Service.</p>
+    <p style="font-size: 0.7rem; margin-top: 5px; opacity: 0.6;">Cloud Sync Active • Gemini AI Decision Support</p>
+</footer>
 
 <script src="app.js"></script>
 </body>
