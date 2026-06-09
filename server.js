@@ -9,7 +9,7 @@ app.use(express.static(__dirname));
 app.post('/api/ai-assist', async (req, res) => {
     try {
         const { drugName, api, category } = req.body;
-        const GEMINI_KEY = process.env.AI_API_KEY;
+        const GEMINI_KEY = process.env.AIzaSyBXUzwNGDO7XFrZPvBJVFYxw1tg30rqQNU;
         
         const prompt = `You are a Senior Clinical Pharmacist in Lagos, Nigeria. 
         Analyze the drug: ${drugName} (${api}) in the ${category} category.
