@@ -1,85 +1,97 @@
+/**
+ * GPharm AI Lagos — Professional Node.js Backend
+ * Handles OpenAI GPT-4o-mini Bridge & Web Serving
+ */
+
 const express = require('express');
 const path = require('path');
+const axios = require('axios'); // Ensure 'axios' is in your package.json
 const app = express();
+
+// Render provides the PORT environment variable automatically
 const PORT = process.env.PORT || 3000;
 
+// Middleware to parse JSON data
 app.use(express.json());
-app.use(express.static(__dirname));
 
+/**
+ * 1. AI ASSISTANT ROUTE (OpenAI Bridge)
+ * This endpoint is called by app.js to get clinical/market insights.
+ */
 app.post('/api/ai-assist', async (req, res) => {
-    const GEMINI_KEY = process.env.AI_API_KEY;
+    const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
-    if (!GEMINI_KEY) {
-        return res.status(500).json({ error: "API Key missing in Render settings." });
+    // Safety check for API Key
+    if (!OPENAI_KEY) {
+        console.error("CRITICAL: OPENAI_API_KEY is missing in Render environment variables.");
+        return res.status(500).json({ error: "Server Configuration Error: AI Key missing." });
     }
 
     try {
         const { drugName, api, category } = req.body;
+        console.log(`[AI Request] Analyzing: ${drugName} for staff consult.`);
+
+        // The professional clinical prompt for the Lagos market
+        const prompt = `You are a Senior Clinical Pharmacist in Lagos, Nigeria. 
+        Analyze the drug: ${drugName} (API: ${api}) in the ${category} category.
         
-        // Clean up data to avoid sending "undefined" to Google
-        const dName = drugName || "Medicine";
-        const dApi = api || "General Molecule";
-        const dCat = category || "General Pharmacy";
+        TASKS:
+        1. Suggest 3 bio-equivalent generic substitutes available in the Lagos market.
+        2. MARKET INTELLIGENCE: Estimate the current average retail price range for ${drugName} at major Lagos pharmacies (e.g., Medplus, HealthPlus, Nett).
+        3. SAFETY: Provide a one-sentence clinical safety or dosage precaution.
+        
+        RESPONSE FORMAT:
+        Use concise professional bullet points. Use HTML line breaks (<br>) between sections.`;
 
-        const url = `https://genergenerativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
-
-        // SAFETY SETTINGS: This is the most important part for medical apps
-        const payload = {
-            contents: [{
-                parts: [{ 
-                    text: `As a clinical pharmacy research assistant, analyze the drug molecule ${dApi} (Brand: ${dName}) in the ${dCat} category for the Nigerian market.
-                    1. List 3 bio-equivalent generic alternatives available in Lagos.
-                    2. Provide a 2024 price benchmark range in Naira.
-                    3. Give a brief clinical use note.
-                    Keep it professional and concise.` 
-                }]
-            }],
-            safetySettings: [
-                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+        // OpenAI API Call (Using the fast and cheap GPT-4o-mini model)
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: "gpt-4o-mini",
+            messages: [
+                { role: "system", content: "You are a professional clinical pharmaceutical consultant in Lagos." },
+                { role: "user", content: prompt }
             ],
-            generationConfig: {
-                temperature: 0.1, // Lower temperature = more factual/less creative
-                maxOutputTokens: 800
+            temperature: 0.3 // Lower temperature ensures more factual/consistent pricing data
+        }, {
+            headers: {
+                'Authorization': `Bearer ${OPENAI_KEY}`,
+                'Content-Type': 'application/json'
             }
-        };
-
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
+        const aiResult = response.data.choices[0].message.content;
+        console.log(`[AI Success] Response generated for ${drugName}`);
+        
+        res.json({ result: aiResult });
 
-        // LOGGING (Check your Render terminal logs!)
-        console.log("Gemini Payload Sent for:", dName);
-
-        // Check for specific Gemini Response paths
-        if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
-            const result = data.candidates[0].content.parts[0].text;
-            res.json({ result });
-        } 
-        else if (data.error) {
-            console.error("Gemini API Error:", data.error.message);
-            res.status(500).json({ error: `Google API Error: ${data.error.message}` });
-        }
-        else {
-            // This captures "Safety Filter" blocks specifically
-            const blockReason = data.promptFeedback?.blockReason || "Safety Filter Block";
-            console.error("Gemini Blocked:", blockReason);
-            res.status(500).json({ error: `Google blocked this request due to: ${blockReason}. Try a different drug.` });
-        }
     } catch (error) {
-        console.error("Server Bridge Error:", error.message);
-        res.status(500).json({ error: "Connection to AI service failed." });
+        // Detailed error logging for Render Console
+        console.error("AI Bridge Error:", error.response ? error.response.data : error.message);
+        
+        res.status(500).json({ 
+            error: "AI communication failed. Please check OpenAI credits or API key status." 
+        });
     }
 });
 
+/**
+ * 2. STATIC FILE SERVING
+ * This serves your index.html and app.js to the browser.
+ */
+app.use(express.static(path.join(__dirname, '/')));
+
+/**
+ * 3. SPA ROUTING FALLBACK
+ * Ensures that if a user refreshes the page on a sub-route, 
+ * the server always returns the main index.html file.
+ */
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`GPharm Server active on port ${PORT}`));
+// Start the server
+app.listen(PORT, () => {
+    console.log(`-----------------------------------------`);
+    console.log(`🚀 GPharm Server is live on port ${PORT}`);
+    console.log(`🏥 Environment: Production (Lagos/Lagos)`);
+    console.log(`-----------------------------------------`);
+});
