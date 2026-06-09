@@ -1,119 +1,107 @@
 // app.js
-const SUPABASE_URL = 'https://pfjfdnwaatiacqgwbsuf.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_-WC3BTgSny08Oya6VmdBlA_znweCfNH';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL = https://fyqtcnblyhknaiemxwrr.supabase.co;
+const SUPABASE_KEY = sb_publishable_3JLIN7jRvr4pFBCy8vZykw_dfbHVyBT; 
 
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const PHARMACY_WHATSAPP = "2348053365937";
 let products = [];
-let publicCart = [];
 let isAdminMode = false;
 
-// --- 1. INITIALIZE ---
 async function init() {
-    console.log("GPharm Engine: Connecting to Cloud...");
+    console.log("App starting...");
     await loadData();
     
-    // Real-time listener: When you add stock on one device, it shows on the other instantly
-    supabaseClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
-        console.log("Database update detected!");
-        loadData();
-    }).subscribe();
-
-    // Attach Search listener
     const searchInput = document.getElementById('input-search-public');
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            renderPublic(e.target.value);
-        });
+        searchInput.addEventListener('input', (e) => renderPublic(e.target.value));
     }
 }
 
 async function loadData() {
-    const { data, error } = await supabaseClient
-        .from('products')
-        .select('*')
-        .order('name', { ascending: true });
+    try {
+        const { data, error } = await supabaseClient
+            .from('products')
+            .select('*')
+            .order('name', { ascending: true });
 
-    if (error) {
-        console.error("Supabase Load Error:", error.message);
-    } else {
+        if (error) {
+            alert("❌ Supabase Load Error: " + error.message);
+            return;
+        }
+
         products = data || [];
-        console.log("Data successfully loaded:", products.length, "items");
+        console.log("Database connected. Items found:", products.length);
+        
+        if (products.length === 0) {
+            alert("⚠️ Connection successful, but the 'products' table is empty. Add a drug in Pharmacy Login.");
+        }
+
         isAdminMode ? renderAdmin() : renderPublic();
+    } catch (err) {
+        alert("❌ Script Crash: " + err.message);
     }
 }
 
-// --- 2. SEARCH & RENDER ---
-window.renderPublic = function(filter = "") {
-    const grid = document.getElementById('public-grid');
-    if (!grid) return;
-
-    const filtered = products.filter(p => {
-        const search = filter.toLowerCase();
-        return (p.name || "").toLowerCase().includes(search) || 
-               (p.api || "").toLowerCase().includes(search) ||
-               (p.cat || "").toLowerCase().includes(search);
-    });
-
-    if (filtered.length === 0) {
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:3rem; opacity:0.5;">No results found for "${filter}".</div>`;
-        return;
-    }
-
-    grid.innerHTML = filtered.map(p => `
-        <div class="card">
-            <span class="badge">${p.cat} ${p.pom ? '• 🔴 POM' : ''}</span>
-            <h3>${p.name}</h3>
-            <p class="api-text">${p.api || ''}</p>
-            <div class="price">₦${(p.price || 0).toLocaleString()}</div>
-            <button class="btn-ai" onclick="window.triggerAI(${p.id})">Consult Gemini AI</button>
-            <button class="btn-primary" onclick="window.addToPublicCart(${p.id})">Add to Order</button>
-        </div>
-    `).join('');
-};
-
-// --- 3. MANUAL ENTRY FIX ---
 window.saveManualProduct = async function() {
     const name = document.getElementById('m-name').value.trim();
-    const api = document.getElementById('m-api').value.trim();
     const price = parseInt(document.getElementById('m-price').value);
     const stock = parseInt(document.getElementById('m-stock').value);
-    const cat = document.getElementById('m-cat').value;
-    const pom = document.getElementById('m-pom').checked;
 
-    if (!name || isNaN(price) || isNaN(stock)) {
-        alert("⚠️ Please fill in Name, Price, and Stock Quantity.");
+    if (!name || isNaN(price)) {
+        alert("⚠️ Please enter Name and Price.");
         return;
     }
 
     try {
         const { error } = await supabaseClient
             .from('products')
-            .insert([{ name, api, price, stock, cat, pom }]);
-            
-        if (error) throw error;
+            .insert([{ 
+                name: name, 
+                api: document.getElementById('m-api').value,
+                price: price, 
+                stock: stock, 
+                cat: document.getElementById('m-cat').value,
+                pom: document.getElementById('m-pom').checked 
+            }]);
 
-        alert("✅ " + name + " saved to cloud!");
-        window.closeModal('modal-add');
-        loadData(); // This refreshes the screen instantly
+        if (error) {
+            alert("❌ Insert Failed: " + error.message + "\n(Hint: Go to Supabase and Disable RLS on the products table)");
+        } else {
+            alert("✅ " + name + " added successfully!");
+            window.closeModal('modal-add');
+            await loadData();
+        }
     } catch (err) {
         alert("❌ Error: " + err.message);
     }
 };
 
-// --- 4. NAVIGATION ---
+// ... Include renderPublic, renderAdmin, handleLogin, etc. as per previous versions
+window.renderPublic = function(filter = "") {
+    const grid = document.getElementById('public-grid');
+    if (!grid) return;
+    const filtered = products.filter(p => (p.name + (p.api || '')).toLowerCase().includes(filter.toLowerCase()));
+    
+    if (filtered.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;">No results. Check if table has data.</div>`;
+        return;
+    }
+
+    grid.innerHTML = filtered.map(p => `
+        <div class="card">
+            <h3>${p.name}</h3>
+            <div class="price">₦${p.price.toLocaleString()}</div>
+            <button class="btn-primary" onclick="window.addToPublicCart(${p.id})">Add to Order</button>
+        </div>
+    `).join('');
+};
+
 window.handleLogin = function() {
-    if (!isAdminMode) {
-        const code = prompt("Pharmacy Access Code:");
-        if (code === "1234") {
-            isAdminMode = true;
-            document.getElementById('nav-btn-admin').innerText = "Logout Admin";
-            window.showView('admin');
-        } else { alert("❌ Invalid Access."); }
-    } else {
-        isAdminMode = false;
-        document.getElementById('nav-btn-admin').innerText = "Pharmacy Login";
-        window.showView('home');
+    const code = prompt("Pharmacy Access Code:");
+    if (code === "1234") {
+        isAdminMode = true;
+        document.getElementById('nav-btn-admin').innerText = "Logout";
+        window.showView('admin');
     }
 };
 
