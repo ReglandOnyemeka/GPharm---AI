@@ -7,7 +7,7 @@ app.use(express.json());
 
 // 1. AI API ROUTE
 app.post('/api/ai-assist', async (req, res) => {
-    const GEMINI_KEY = process.env.AI_API_KEY;
+    const GEMINI_KEY = process.env.AIzaSyBXUzwNGDO7XFrZPvBJVFYxw1tg30rqQNU;
     if (!GEMINI_KEY) return res.status(500).json({ error: "API Key missing in Render settings." });
 
     try {
