@@ -8,44 +8,55 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 app.post('/api/ai-assist', async (req, res) => {
-    // LOG: Check if the key exists in the environment
-    console.log("AI Request Received. Checking API Key...");
-    
     const GEMINI_KEY = process.env.AI_API_KEY;
 
     if (!GEMINI_KEY) {
-        console.error("CRITICAL ERROR: AI_API_KEY is undefined in Render Environment.");
+        console.error("ERROR: AI_API_KEY missing.");
         return res.status(500).json({ error: "API Key missing in Render settings." });
     }
 
     try {
         const { drugName, api, category } = req.body;
-        console.log(`Consulting Gemini for: ${drugName}`);
         
-        const prompt = `You are a Senior Clinical Pharmacist in Lagos, Nigeria. 
-        Analyze the drug: ${drugName} (${api}) in the ${category} category.
-        1. Suggest 3 bio-equivalent substitutes available in the Lagos market.
-        2. MARKET INTELLIGENCE: Estimate the average current retail price range for ${drugName} at major pharmacies in Lagos.
-        3. Clinical safety brief.
-        Respond with professional bullet points for staff use.`;
+        // Safety settings tell Gemini not to block medical/clinical terms
+        const payload = {
+            contents: [{
+                parts: [{ 
+                    text: `You are a Senior Clinical Pharmacist in Lagos. Analyze: ${drugName} (${api}) in category ${category}. 
+                    1. Suggest 3 bio-equivalents in Lagos. 
+                    2. Estimate Lagos market price benchmark. 
+                    3. Safety brief. 
+                    Use concise bullet points.` 
+                }]
+            }],
+            safetySettings: [
+                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ]
+        };
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
 
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
-        
-        if (data.candidates && data.candidates[0].content) {
+
+        // LOGGING THE RAW DATA FOR YOU IN RENDER CONSOLE
+        console.log("RAW GEMINI RESPONSE:", JSON.stringify(data));
+
+        if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
             const result = data.candidates[0].content.parts[0].text;
-            console.log("AI Response Successful.");
             res.json({ result });
+        } else if (data.promptFeedback && data.promptFeedback.blockReason) {
+            res.status(500).json({ error: `AI Blocked request: ${data.promptFeedback.blockReason}` });
         } else {
-            console.error("Gemini Error Response:", JSON.stringify(data));
-            res.status(500).json({ error: "AI returned an invalid structure." });
+            res.status(500).json({ error: "AI returned an empty structure. Check Render logs for raw data." });
         }
     } catch (error) {
         console.error("Fetch Error:", error.message);
