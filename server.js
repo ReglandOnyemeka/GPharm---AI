@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const path = require('path');
 const app = express();
@@ -7,14 +8,19 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 app.post('/api/ai-assist', async (req, res) => {
+    const GEMINI_KEY = process.env.AI_API_KEY;
+
+    if (!GEMINI_KEY) {
+        return res.status(500).json({ error: "Server Configuration Error: Missing API Key" });
+    }
+
     try {
         const { drugName, api, category } = req.body;
-        const GEMINI_KEY = process.env.AIzaSyBXUzwNGDO7XFrZPvBJVFYxw1tg30rqQNU;
         
         const prompt = `You are a Senior Clinical Pharmacist in Lagos, Nigeria. 
         Analyze the drug: ${drugName} (${api}) in the ${category} category.
         1. Suggest 3 bio-equivalent substitutes available in the Lagos market.
-        2. MARKET INTELLIGENCE: Estimate the average current retail price range for ${drugName} at major Lagos pharmacies (like HealthPlus or Medplus).
+        2. MARKET INTELLIGENCE: Estimate the average current retail price range for ${drugName} at major Lagos pharmacies.
         3. Explain briefly why these substitutes are clinically safe.
         Respond with professional bullet points for internal staff use.`;
 
@@ -27,10 +33,16 @@ app.post('/api/ai-assist', async (req, res) => {
         });
 
         const data = await response.json();
-        const result = data.candidates[0].content.parts[0].text;
-        res.json({ result });
+        
+        if (data.candidates && data.candidates[0].content) {
+            const result = data.candidates[0].content.parts[0].text;
+            res.json({ result });
+        } else {
+            throw new Error("Invalid AI Response Structure");
+        }
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("AI Bridge Error:", error.message);
+        res.status(500).json({ error: "AI logic failed to process request." });
     }
 });
 
