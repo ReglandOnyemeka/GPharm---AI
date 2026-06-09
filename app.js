@@ -1,5 +1,5 @@
 /**
- * GPharm AI Lagos - Robust Cloud Engine
+ * GPharm AI Lagos — Cloud Logic Engine
  */
 
 const SUPABASE_URL = 'https://fyqtcnblyhknaiemxwrr.supabase.co';
@@ -12,13 +12,11 @@ let publicCart = [];
 let posCart = [];
 let isAdminMode = false;
 
-// --- 1. INITIALIZE ---
+// --- 1. INITIALIZATION ---
 async function init() {
     await loadData();
-    // Live Cloud Sync
     supabaseClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => loadData()).subscribe();
     
-    // Search listener for public
     const searchIn = document.getElementById('input-search-public');
     if (searchIn) searchIn.addEventListener('input', (e) => renderPublic(e.target.value));
 }
@@ -28,11 +26,11 @@ async function loadData() {
     if (!error) {
         products = data || [];
         isAdminMode ? renderAdmin() : renderPublic();
-        if (isAdminMode) renderPOS();
+        if (isAdminMode) { renderPOS(); updateInsights(); }
     }
 }
 
-// --- 2. ADMIN NAVIGATION ---
+// --- 2. STAFF AUTH & TABS ---
 window.handleLogin = function() {
     if (!isAdminMode) {
         const code = prompt("Pharmacy Access Code:");
@@ -40,7 +38,7 @@ window.handleLogin = function() {
             isAdminMode = true;
             document.getElementById('nav-btn-admin').innerText = "Logout Admin";
             window.showView('admin');
-        } else { alert("❌ Access Denied"); }
+        } else { alert("❌ Invalid Access."); }
     } else {
         isAdminMode = false;
         document.getElementById('nav-btn-admin').innerText = "Pharmacy Login";
@@ -65,17 +63,39 @@ window.switchAdminTab = function(tab) {
     if(tab === 'inv') renderInventory(); else renderPOS();
 };
 
-// --- 3. POS SYSTEM LOGIC ---
+// --- 3. AI CONSULT (STAFF ONLY) ---
+window.triggerAI = async function(id) {
+    if (!isAdminMode) return;
+    const drug = products.find(x => x.id === id);
+    const banner = document.getElementById('ai-banner-admin');
+    const content = document.getElementById('ai-content-admin');
+    
+    banner.style.display = 'block';
+    banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    content.innerHTML = `🔄 analyzing Lagos market for ${drug.name}...`;
+
+    try {
+        const response = await fetch('/api/ai-assist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ drugName: drug.name, api: drug.api, category: drug.cat })
+        });
+        const data = await response.json();
+        content.innerHTML = `<strong>✨ AI Clinical & Market Analysis</strong><br>${data.result.replace(/\n/g, '<br>')}`;
+    } catch (err) { content.innerHTML = "⚠️ AI offline."; }
+};
+
+// --- 4. POS TERMINAL ---
 window.renderPOS = function(filter = "") {
     const grid = document.getElementById('pos-grid');
     if (!grid) return;
-    const filtered = products.filter(p => (p.name + (p.api || '')).toLowerCase().includes(filter.toLowerCase()));
-    
-    grid.innerHTML = filtered.map(p => `
+    const items = products.filter(p => (p.name + (p.api || '')).toLowerCase().includes(filter.toLowerCase()));
+    grid.innerHTML = items.map(p => `
         <div class="card" onclick="window.addToPOSCart(${p.id})">
             <div style="font-size:0.7rem; color:#888;">Stock: ${p.stock}</div>
             <h3 style="font-size:1rem;">${p.name}</h3>
             <div class="price" style="font-size:1.1rem;">₦${p.price.toLocaleString()}</div>
+            <button class="btn-ai" onclick="event.stopPropagation(); window.triggerAI(${p.id})">AI Market Check</button>
         </div>
     `).join('');
 };
@@ -89,76 +109,80 @@ window.addToPOSCart = function(id) {
 };
 
 window.updatePOSUI = function() {
-    const container = document.getElementById('pos-cart-items');
-    let total = 0;
-    container.innerHTML = posCart.map(i => {
-        total += (i.price * i.qty);
-        return `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${i.name} x${i.qty}</span><strong>₦${(i.price*i.qty).toLocaleString()}</strong></div>`;
-    }).join('');
+    const total = posCart.reduce((a, b) => a + (b.price * b.qty), 0);
     document.getElementById('pos-total').innerText = "₦" + total.toLocaleString();
+    document.getElementById('pos-cart-items').innerHTML = posCart.map(i => `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${i.name} x${i.qty}</span><strong>₦${(i.price*i.qty).toLocaleString()}</strong></div>`).join('');
     window.validatePOS();
 };
 
 window.validatePOS = function() {
     const total = posCart.reduce((a, b) => a + (b.price * b.qty), 0);
-    const cash = parseFloat(document.getElementById('pay-cash').value) || 0;
-    const transfer = parseFloat(document.getElementById('pay-transfer').value) || 0;
-    const card = parseFloat(document.getElementById('pay-card').value) || 0;
+    const sum = (parseFloat(document.getElementById('pay-cash').value) || 0) + (parseFloat(document.getElementById('pay-transfer').value) || 0) + (parseFloat(document.getElementById('pay-card').value) || 0);
     const btn = document.getElementById('btn-checkout-pos');
-    
-    btn.disabled = (total <= 0 || (cash + transfer + card) < total);
+    btn.disabled = (total <= 0 || sum < total);
     btn.style.opacity = btn.disabled ? "0.5" : "1";
 };
 
 window.checkoutPOS = async function() {
     for (let item of posCart) {
-        const { error } = await supabaseClient.from('products').update({ stock: item.stock - item.qty }).eq('id', item.id);
+        await supabaseClient.from('products').update({ stock: item.stock - item.qty }).eq('id', item.id);
     }
-    alert("✅ Sale Finalized. Inventory synced.");
+    alert("✅ Sale Finalized.");
     posCart = []; window.updatePOSUI();
 };
 
-// --- 4. BULK EXCEL UPLOAD ---
+// --- 5. INVENTORY & EXCEL ---
 window.handleExcelUpload = function(input) {
     const file = input.files[0];
-    if (!file) return;
     const reader = new FileReader();
     reader.onload = async function(e) {
         const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, { type: 'array' });
+        const wb = XLSX.read(data, {type: 'array'});
         const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        
         const uploads = rows.map(r => ({
-            name: r.Name || r.name,
-            api: r.API || r.api,
+            name: r.Name || r.name, api: r.API || r.api,
             cat: r.Category || r.category || "General",
             price: parseInt(r.Price || r.price || 0),
             stock: parseInt(r.Quantity || r.stock || 0),
             pom: (r.POM === "Yes" || r.pom === "yes")
         }));
-
         const { error } = await supabaseClient.from('products').insert(uploads);
-        if (error) alert("Excel Error: " + error.message);
-        else { alert("✅ Successfully imported " + uploads.length + " items!"); loadData(); }
+        if (error) alert(error.message); else { alert("Import Success!"); loadData(); }
     };
     reader.readAsArrayBuffer(file);
 };
 
-// --- 5. STOREFRONT & CART ---
-window.renderPublic = function(filter = "") {
+window.saveManualProduct = async function() {
+    const newProd = {
+        name: document.getElementById('m-name').value,
+        api: document.getElementById('m-api').value,
+        cat: document.getElementById('m-cat').value,
+        price: parseInt(document.getElementById('m-price').value),
+        stock: parseInt(document.getElementById('m-stock').value),
+        pom: document.getElementById('m-pom').checked
+    };
+    const { error } = await supabaseClient.from('products').insert([newProd]);
+    if (error) alert(error.message); else { window.closeModal('modal-add'); loadData(); }
+};
+
+function renderInventory() {
+    document.getElementById('inventory-table-body').innerHTML = products.map(p => `<tr><td>${p.name}</td><td>${p.api}</td><td>₦${p.price}</td><td>${p.stock}</td></tr>`).join('');
+}
+
+// --- 6. STOREFRONT & WHATSAPP ---
+function renderPublic(filter = "") {
     const grid = document.getElementById('public-grid');
     if (!grid) return;
-    const filtered = products.filter(p => (p.name + (p.api || '')).toLowerCase().includes(filter.toLowerCase()));
-    
-    grid.innerHTML = filtered.map(p => `
+    const items = products.filter(p => (p.name + (p.api || '')).toLowerCase().includes(filter.toLowerCase()));
+    grid.innerHTML = items.map(p => `
         <div class="card">
-            <small class="cat">${p.cat}</small>
+            <span style="font-size:0.6rem; font-weight:700; color:#888;">${p.cat}</span>
             <h3>${p.name}</h3>
             <div class="price">₦${p.price.toLocaleString()}</div>
             <button class="btn-primary" onclick="window.addToPublicCart(${p.id})">Add to Order</button>
         </div>
     `).join('');
-};
+}
 
 window.addToPublicCart = function(id) {
     const p = products.find(x => x.id === id);
@@ -175,7 +199,7 @@ window.updateCartUI = function() {
         bar.style.display = 'flex';
         document.getElementById('cart-count').innerText = count;
         document.getElementById('cart-sum').innerText = "₦" + sum.toLocaleString();
-    } else { bar.style.display = 'none'; }
+    } else bar.style.display = 'none';
 };
 
 window.openPublicCart = function() {
@@ -191,22 +215,10 @@ window.checkoutPublic = function() {
     window.open(`https://wa.me/${PHARMACY_WHATSAPP}?text=${encodeURIComponent(msg)}`);
 };
 
-// --- 6. MANUAL ENTRY & UTILS ---
-window.saveManualProduct = async function() {
-    const newProd = {
-        name: document.getElementById('m-name').value,
-        api: document.getElementById('m-api').value,
-        cat: document.getElementById('m-cat').value,
-        price: parseInt(document.getElementById('m-price').value),
-        stock: parseInt(document.getElementById('m-stock').value),
-        pom: document.getElementById('m-pom').checked
-    };
-    const { error } = await supabaseClient.from('products').insert([newProd]);
-    if (error) alert(error.message); else { window.closeModal('modal-add'); loadData(); }
-};
-
-function renderInventory() {
-    document.getElementById('inventory-table-body').innerHTML = products.map(p => `<tr><td>${p.name}</td><td>${p.api}</td><td>${p.cat}</td><td>₦${p.price}</td><td>${p.stock}</td></tr>`).join('');
+function updateInsights() {
+    const total = products.reduce((a, b) => a + (b.price * b.stock), 0);
+    document.getElementById('stat-total').innerText = "₦" + (total/1000).toFixed(1) + "k";
+    document.getElementById('stat-low').innerText = products.filter(p => p.stock < 10).length;
 }
 
 window.closeModal = (id) => document.getElementById(id).style.display = 'none';
