@@ -3,7 +3,7 @@
  */
 
 const SUPABASE_URL = 'https://fyqtcnblyhknaiemxwrr.supabase.co';
-const SUPABASE_KEY = 'sb_secret_Uy6SjTFDCgn5rXsKJ035lQ_Bcj9oQV6';
+const SUPABASE_KEY = 'sb_publishable_3JLIN7jRvr4pFBCy8vZykw_dfbHVyBT';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const PHARMACY_WHATSAPP = "2348053365937";
