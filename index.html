@@ -7,26 +7,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --green-deep: #0a4a3a; --gold: #c8963c; --white: #fff; --border: #e0e6e2; --ai-purple: #8b5cf6; }
+        :root { --green-deep: #0a4a3a; --white: #ffffff; --gold: #c8963c; --ai-purple: #8b5cf6; --border: #e0e6e2; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'DM Sans', sans-serif; background: #faf9f6; color: #1a1c1a; line-height: 1.5; }
         nav { background: var(--white); padding: 0.8rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; }
         .logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 800; color: var(--green-deep); }
-        .nav-btn { background: none; border: 1px solid var(--border); padding: 8px 18px; border-radius: 20px; cursor: pointer; font-weight: 600; color: var(--green-deep); }
+        .nav-btn { background: none; border: 1px solid var(--border); padding: 8px 18px; border-radius: 20px; cursor: pointer; font-weight: 600; color: var(--green-deep); transition: 0.2s; }
         .nav-btn.active { background: var(--green-deep) !important; color: #ffffff !important; }
         .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
-        .view { display: none; } .view.active { display: block; }
+        .view { display: none; } .view.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .hero { background: var(--green-deep); color: white; padding: 3rem 1.5rem; border-radius: 16px; text-align: center; margin-bottom: 2rem; }
-        #input-search-public { width: 100%; padding: 1rem; border-radius: 50px; border: 1px solid var(--border); margin-bottom: 2rem; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
-        .card { background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border); }
-        .price { color: var(--gold); font-weight: 700; font-size: 1.3rem; }
-        .btn-ai { background: var(--ai-purple); color: white; border: none; padding: 8px; border-radius: 8px; width: 100%; margin-top: 10px; cursor: pointer; }
-        .btn-primary { background: var(--green-deep); color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; cursor: pointer; font-weight: 700; }
+        #input-search-public { width: 100%; padding: 1.2rem; border-radius: 50px; border: 1px solid var(--border); margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .card { background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border); display: flex; flex-direction: column; }
+        .price { color: var(--gold); font-weight: 700; font-size: 1.4rem; margin-top: auto; }
+        .btn-ai { background: var(--ai-purple); color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; width: 100%; }
+        .btn-primary { background: var(--green-deep); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%; }
         .ai-banner { background: #f5f3ff; border: 1px solid var(--ai-purple); padding: 1.2rem; border-radius: 12px; margin-bottom: 1.5rem; display: none; }
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; border-radius: 12px; overflow: hidden; }
-        th { text-align: left; padding: 12px; background: #f0f7f2; color: var(--green-deep); font-size: 0.8rem; }
-        td { padding: 12px; border-bottom: 1px solid var(--border); }
+        th { text-align: left; padding: 12px; background: #eef7f2; color: var(--green-deep); font-size: 0.75rem; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        #public-cart-bar { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); background: var(--green-deep); color: white; width: 90%; max-width: 450px; padding: 1.2rem 2rem; border-radius: 50px; cursor: pointer; display: none; justify-content: space-between; z-index: 1001; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 2rem; border-radius: 20px; width: 90%; max-width: 500px; }
     </style>
@@ -34,16 +36,16 @@
 <body>
 
 <nav>
-    <div class="logo">GPharm <small style="color:var(--gold); font-size: 0.6rem;">AI</small></div>
+    <div class="logo">GPharm <small style="color:var(--green-bright); font-size: 0.6rem;">Smart Pharmacy </small></div>
     <div>
         <button onclick="window.showView('home')" id="nav-btn-home" class="nav-btn active">MyPharmacy</button>
-        <button onclick="window.handleLogin()" id="nav-btn-admin" class="nav-btn">Pharmacy Login</button>
+        <button onclick="window.handleLogin()" id="nav-btn-admin" class="nav-btn">Pharventory Login</button>
     </div>
 </nav>
 
 <div id="view-home" class="view active">
     <div class="container">
-        <div class="hero"><h1>Smart Pharmacy</h1><p>Genuine Medicine &bull; Clinical AI Support</p></div>
+        <div class="hero"><h1>Healthcare You Can Trust</h1><p>Verified Medications &bull; Fast Delivery &bull; PCN Verified</p></div>
         <input type="text" id="input-search-public" placeholder="Search brands or ingredients...">
         <div id="public-grid" class="grid"></div>
     </div>
@@ -52,35 +54,46 @@
 <div id="view-admin" class="view">
     <div class="container">
         <div id="insights-panel" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
-            <div style="background:white; padding:1.2rem; border-radius:12px; border:1px solid #ddd;"><label>VALUE</label><div id="stat-total" style="font-size:1.5rem; font-weight:700;">₦0</div></div>
-            <div style="background:white; padding:1.2rem; border-radius:12px; border:1px solid #ddd;"><label>LOW STOCK</label><div id="stat-low" style="font-size:1.5rem; font-weight:700; color:red;">0</div></div>
+            <div style="background:white; padding:1.2rem; border-radius:12px; border:1px solid #ddd;"><label style="font-size:0.7rem; color:#888;">STOCK VALUE</label><div id="stat-total" style="font-size:1.5rem; font-weight:700;">₦0</div></div>
+            <div style="background:white; padding:1.2rem; border-radius:12px; border:1px solid #ddd;"><label style="font-size:0.7rem; color:#888;">LOW STOCK</label><div id="stat-low" style="font-size:1.5rem; font-weight:700; color:red;">0</div></div>
         </div>
-        <div id="ai-banner-admin" class="ai-banner"><div id="ai-content-admin"></div></div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem;">
+        <div id="ai-banner-admin" class="ai-banner"><div id="ai-content-admin"></div><p style="font-size:0.7rem; color:#6b7280; margin-top:10px; border-top:1px solid #ddd; padding-top:10px;">⚠️ Staff only: Clinical decision support.</p></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
             <h2>Cloud Inventory</h2>
             <button class="nav-btn" style="background:var(--gold); color:white; border:none;" onclick="window.openAddModal()">+ Add Item</button>
         </div>
         <div id="admin-grid" class="grid"></div>
         <br>
-        <table><thead><tr><th>Name</th><th>API</th><th>Price</th><th>Stock</th></tr></thead><tbody id="inventory-tbody"></tbody></table>
+        <table><thead><tr><th>Drug Name</th><th>API Molecule</th><th>Price</th><th>Stock</th></tr></thead><tbody id="inventory-tbody"></tbody></table>
     </div>
 </div>
 
-<div class="modal" id="modal-add">
-    <div class="modal-content">
-        <h2>Manual Entry</h2><br>
-        <input type="text" id="m-name" placeholder="Brand Name" style="width:100%; padding:10px; margin-bottom:10px;">
-        <input type="text" id="m-api" placeholder="Active Ingredient" style="width:100%; padding:10px; margin-bottom:10px;">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <input type="number" id="m-price" placeholder="Price (₦)" style="padding:10px;">
-            <input type="number" id="m-stock" placeholder="Quantity" style="padding:10px;">
-        </div>
-        <input type="text" id="m-cat" value="General" style="display:none;">
-        <br><label><input type="checkbox" id="m-pom"> Prescription Required</label><br><br>
-        <button class="btn-primary" onclick="window.saveManualProduct()">Save to Cloud</button>
-        <button class="nav-btn" style="width:100%; margin-top:10px; border:none;" onclick="window.closeModal('modal-add')">Cancel</button>
-    </div>
-</div>
+<div id="public-cart-bar" onclick="window.openPublicCart()"><span>🛒 Cart (<span id="cart-count">0</span>)</span><span style="font-weight:700;">Checkout</span></div>
+
+<!-- MODALS -->
+<div class="modal" id="modal-checkout"><div class="modal-content">
+    <h2>Secure Checkout</h2><br>
+    <div id="modal-cart-list"></div><br>
+    <input type="text" id="order-name" placeholder="Receiver Name" style="width:100%; padding:12px; border-radius:10px; border:1px solid #ccc; margin-bottom:12px;">
+    <input type="tel" id="order-phone" maxlength="11" placeholder="Phone (080...)" style="width:100%; padding:12px; border-radius:10px; border:1px solid #ccc; margin-bottom:12px;">
+    <input type="text" id="order-address" placeholder="Lagos Address" style="width:100%; padding:12px; border-radius:10px; border:1px solid #ccc; margin-bottom:1.5rem;">
+    <button class="btn-primary" onclick="window.checkoutPublic()">Place Order via WhatsApp</button>
+    <button onclick="window.closeModal('modal-checkout')" style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer;">Cancel</button>
+</div></div>
+
+<div class="modal" id="modal-add"><div class="modal-content">
+    <h2>New Batch</h2><br>
+    <input type="text" id="m-name" placeholder="Brand Name" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; margin-bottom:12px;">
+    <input type="text" id="m-api" placeholder="Clinical Ingredient" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; margin-bottom:12px;">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <input type="number" id="m-price" placeholder="Price (₦)" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc;">
+        <input type="number" id="m-stock" placeholder="Qty" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc;">
+    </div><br>
+    <select id="m-cat" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc;"><option>Analgesics</option><option>Antibiotics</option><option>Antimalarials</option><option>Supplements</option></select><br><br>
+    <label style="font-size:0.8rem;"><input type="checkbox" id="m-pom"> Prescription Required</label><br><br>
+    <button class="btn-primary" onclick="window.saveManualProduct()">Save to Cloud</button>
+    <button onclick="window.closeModal('modal-add')" style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer;">Cancel</button>
+</div></div>
 
 <script src="app.js"></script>
 </body>
